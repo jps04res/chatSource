@@ -1,0 +1,96 @@
+/* Reseta o fundo e centraliza o chat na tela */
+body { 
+  font-family: Arial, sans-serif; 
+  background-color: #f0f2f5; 
+  display: flex; 
+  justify-content: center; 
+  padding: 50px; 
+}
+
+/* A caixa principal do celular/chat */
+#chat-container { 
+  width: 100%; 
+  max-width: 400px; 
+  background: white; 
+  border-radius: 8px; 
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+  display: flex; 
+  flex-direction: column; 
+  height: 500px; 
+}
+
+/* Área de leitura (com rolagem se encher de mensagens) */
+#mensagens-tela { 
+  flex: 1; 
+  padding: 20px; 
+  overflow-y: auto; 
+  display: flex; 
+  flex-direction: column; 
+  gap: 10px; 
+}
+
+/* O balãozinho de cada mensagem */
+.mensagem { 
+  background: #e4e6eb; 
+  padding: 10px 15px; 
+  border-radius: 15px; 
+  width: fit-content; 
+  max-width: 80%; 
+  word-wrap: break-word;
+}
+
+/* A barra inferior de digitar */
+#controles { 
+  display: flex; 
+  padding: 15px; 
+  border-top: 1px solid #ccc; 
+  background: #fff; 
+  border-bottom-left-radius: 8px; 
+  border-bottom-right-radius: 8px; 
+}
+
+#mensagem-input { 
+  flex: 1; 
+  padding: 10px; 
+  border: 1px solid #ccc; 
+  border-radius: 20px; 
+  margin-right: 10px; 
+  outline: none;
+}
+
+#enviar-btn { 
+  padding: 10px 20px; 
+  background: #0084ff; 
+  color: white; 
+  border: none; 
+  border-radius: 20px; 
+  cursor: pointer; 
+  font-weight: bold;
+}
+
+#enviar-btn:hover { background: #006bce; }
+
+/* Atualize a classe .mensagem para não ter cor de fundo fixa */
+.mensagem { 
+  padding: 10px 15px; 
+  border-radius: 15px; 
+  width: fit-content; 
+  max-width: 80%; 
+  word-wrap: break-word;
+}
+
+/* NOVA REGRA: Suas mensagens (Direita e Azul) */
+.minha-mensagem {
+  background: #0084ff;
+  color: white;
+  align-self: flex-end; /* Joga o balão para o lado direito */
+  border-bottom-right-radius: 4px; /* Detalhe visual do balão */
+}
+
+/* NOVA REGRA: Mensagens dos outros (Esquerda e Cinza) */
+.outra-mensagem {
+  background: #e4e6eb;
+  color: black;
+  align-self: flex-start; /* Joga o balão para o lado esquerdo */
+  border-bottom-left-radius: 4px; /* Detalhe visual do balão */
+}
