@@ -1,88 +1,89 @@
-// 1. Importa as ferramentas do Firebase direto da nuvem do Google
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+// 1. Importar o Supabase diretamente da internet
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 
-// 2. A SUA CHAVE DE ACESSO (O Firebase vai te dar isso quando você criar a conta)
-const firebaseConfig = {
-  apiKey: "AIzaSyBfuKycMMMslcYPeW8oKBp38OIUOGn2wgg",
-  authDomain: "chat-source-859ac.firebaseapp.com",
-  projectId: "chat-source-859ac",
-  storageBucket: "chat-source-859ac.firebasestorage.app",
-  messagingSenderId: "272858044463",
-  appId: "1:272858044463:web:e7d34989a7c8a1aaf04eda",
-  measurementId: "G-03KW2ER6Z6"
-};
+// 2. AS TUAS CHAVES DO SUPABASE (Cola aqui o que copiaste)
+const supabaseUrl = 'https://nrjlgfwapzvdrppwbaiz.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5yamxnZndhcHp2ZHJwcHdiYWl6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwNjk4MTAsImV4cCI6MjA4ODY0NTgxMH0.Iln3msaeptH0i6c3wS29CVyMucmLnwghhmzJkPKkiX8';
 
-// 3. Inicia o Firebase e o Banco de Dados (Firestore)
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+// Inicia a ligação ao banco de dados
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-// ... (mantenha os passos 1, 2 e 3 do código anterior intactos com suas chaves) ...
-
-// 4. Pega os elementos do HTML que vamos manipular
+// 3. Obter os elementos do HTML
 const inputMensagem = document.getElementById("mensagem-input");
 const btnEnviar = document.getElementById("enviar-btn");
-const telaMensagens = document.getElementById("mensagens-tela");
+const ecraMensagens = document.getElementById("mensagens-tela");
 
-// NOVO: Gerar ou recuperar um "ID de usuário" para este computador
-// Ele salva no navegador para não mudar se você atualizar a página
+// 4. Gerar ou recuperar um "ID de utilizador" anónimo
 let meuId = localStorage.getItem("meuUsuarioID");
 if (!meuId) {
-  meuId = Math.random().toString(36).substring(2, 15); // Gera um ID aleatório
+  meuId = Math.random().toString(36).substring(2, 15);
   localStorage.setItem("meuUsuarioID", meuId);
 }
 
-// 5. FUNÇÃO PARA ENVIAR MENSAGEM
+// Função para desenhar a mensagem no ecrã com as cores certas
+function desenharMensagem(dados) {
+  const div = document.createElement("div");
+  
+  // Verifica se a mensagem é tua ou de outra pessoa
+  if (dados.autor === meuId) {
+    div.className = "mensagem minha-mensagem";
+  } else {
+    div.className = "mensagem outra-mensagem";
+  }
+  
+  div.textContent = dados.texto;
+  ecraMensagens.appendChild(div);
+  
+  // Faz a barra de rolagem descer automaticamente
+  ecraMensagens.scrollTop = ecraMensagens.scrollHeight;
+}
+
+// 5. Carregar as mensagens antigas ao abrir o site
+async function carregarMensagens() {
+  const { data, error } = await supabase
+    .from('mensagens')
+    .select('*')
+    .order('criado_em', { ascending: true });
+    
+  if (data) {
+    ecraMensagens.innerHTML = "";
+    data.forEach(desenharMensagem);
+  }
+}
+carregarMensagens();
+
+// 6. FUNÇÃO PARA ENVIAR MENSAGEM
 async function enviarMensagem() {
   const texto = inputMensagem.value;
-  if (texto.trim() === "") return; // Não envia se estiver vazio
+  if (texto.trim() === "") return;
 
-  // LIMPA A CAIXA DE TEXTO IMEDIATAMENTE AQUI (resolve o seu problema)
-  inputMensagem.value = ""; 
+  inputMensagem.value = ""; // Limpa a caixa de texto imediatamente
 
-  try {
-    // Salva no banco de dados
-    await addDoc(collection(db, "sala_principal"), {
-      texto: texto,
-      autor: meuId, // <--- NOVO: Enviamos o nosso ID junto com a mensagem
-      dataHora: serverTimestamp() 
-    });
-  } catch (erro) {
-    console.error("Erro ao enviar a mensagem: ", erro);
-    alert("Erro ao enviar. Verifique o console.");
+  // Envia para a tabela 'mensagens' no Supabase
+  const { error } = await supabase
+    .from('mensagens')
+    .insert([{ texto: texto, autor: meuId }]);
+
+  if (error) {
+    console.error("Erro ao enviar a mensagem: ", error);
   }
 }
 
-// 6. Configura o botão e a tecla "Enter" para enviarem a mensagem
+// Configura o botão e a tecla "Enter"
 btnEnviar.addEventListener("click", enviarMensagem);
 inputMensagem.addEventListener("keypress", (e) => {
   if (e.key === "Enter") enviarMensagem();
 });
 
-// 7. FUNÇÃO PARA OUVIR MENSAGENS EM TEMPO REAL
-const q = query(collection(db, "sala_principal"), orderBy("dataHora", "asc"));
-
-onSnapshot(q, (snapshot) => {
-  telaMensagens.innerHTML = ""; // Limpa a tela antes de desenhar as novas
-  
-  snapshot.forEach((doc) => {
-    const dados = doc.data();
-    
-    const div = document.createElement("div");
-    
-    // NOVO: Verifica quem é o autor da mensagem para alinhar corretamente
-    if (dados.autor === meuId) {
-      // Se fui eu que enviei (mesmo ID)
-      div.className = "mensagem minha-mensagem";
-    } else {
-      // Se foi outra pessoa
-      div.className = "mensagem outra-mensagem";
+// 7. OUVIR MENSAGENS NOVAS EM TEMPO REAL
+supabase
+  .channel('chat-publico')
+  .on(
+    'postgres_changes',
+    { event: 'INSERT', schema: 'public', table: 'mensagens' },
+    (payload) => {
+      // Quando alguém envia uma mensagem nova, desenha no ecrã
+      desenharMensagem(payload.new);
     }
-    
-    div.textContent = dados.texto;
-    telaMensagens.appendChild(div);
-  });
-  
-  // Faz a barra de rolagem descer automaticamente
-  telaMensagens.scrollTop = telaMensagens.scrollHeight;
-});
+  )
+  .subscribe();
